@@ -1373,7 +1373,7 @@ const VolunteerEditorView = ({
 };
 
 const App: React.FC = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => !!localStorage.getItem('token'));
   const [view, setView] = useState<AppView>('home');
   const [finishers, setFinishers] = useState<FinisherData[]>([]);
   const [volunteers, setVolunteers] = useState<VolunteerData[]>([]);
@@ -1729,10 +1729,10 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {view !== 'home' && view !== 'login' && view !== 'search_result' && (
-        <Header currentView={view} setView={setView} onLogout={() => { setIsAdmin(false); setView('home'); }} />
+        <Header currentView={view} setView={setView} onLogout={() => { localStorage.removeItem('token'); setIsAdmin(false); setView('home'); }} />
       )}
       <main className="flex-1 bg-slate-50/50">
-        {view === 'home' && <HomeView onSearch={handleSearch} goToLogin={() => setView('login')} searchError={searchError} races={uniqueRaces} />}
+        {view === 'home' && <HomeView onSearch={handleSearch} goToLogin={() => { if (localStorage.getItem('token')) { setIsAdmin(true); setView('dashboard'); } else { setView('login'); } }} searchError={searchError} races={uniqueRaces} />}
         {view === 'login' && <LoginView onLogin={() => { setIsAdmin(true); setView('dashboard'); }} onBack={() => setView('home')} />}
         {view === 'search_result' && (
           <div className="min-h-screen flex flex-col items-center bg-white p-6 sm:p-12">
