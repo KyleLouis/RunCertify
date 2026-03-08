@@ -733,6 +733,12 @@ const EditorView = ({
   const getPrefix = (lang: Language) => lang === 'zh' ? '亲爱的' : 'Dear ';
   const getSuffix = (lang: Language) => lang === 'zh' ? '：' : ': ';
 
+  useEffect(() => {
+    if (selectedFinisher.styleJson) {
+      try { setStyle(JSON.parse(selectedFinisher.styleJson)); } catch(e) {}
+    }
+  }, [selectedFinisher.id]);
+
   const handleNameChange = (newName: string) => {
     const lang = style.language;
     const prefix = getPrefix(lang);
@@ -993,18 +999,19 @@ const EditorView = ({
             </button>
             <button 
               onClick={async () => {
-                const existingIndex = finishers.findIndex(f => f.id === selectedFinisher.id);
+                const finisherToSave = { ...selectedFinisher, styleJson: JSON.stringify(style) };
+                const existingIndex = finishers.findIndex(f => f.id === finisherToSave.id);
                 try {
                   if (existingIndex !== -1) {
-                    await api.updateFinisher(selectedFinisher.id, selectedFinisher);
+                    await api.updateFinisher(finisherToSave.id, finisherToSave);
                   } else {
-                    await api.addFinisher(selectedFinisher);
+                    await api.addFinisher(finisherToSave);
                   }
                 } catch (e) { console.error('save finisher API failed', e); }
                 setFinishers(prev => {
-                  const idx = prev.findIndex(f => f.id === selectedFinisher.id);
-                  if (idx !== -1) { const u = [...prev]; u[idx] = selectedFinisher; return u; }
-                  return [...prev, selectedFinisher];
+                  const idx = prev.findIndex(f => f.id === finisherToSave.id);
+                  if (idx !== -1) { const u = [...prev]; u[idx] = finisherToSave; return u; }
+                  return [...prev, finisherToSave];
                 });
                 setView('dashboard');
               }}
@@ -1224,6 +1231,12 @@ const VolunteerEditorView = ({
   signatureInputRef: React.RefObject<HTMLInputElement | null>,
   onDeleteVolunteer: (id: string) => void
 }) => {
+  useEffect(() => {
+    if (selectedVolunteer.styleJson) {
+      try { setStyle(JSON.parse(selectedVolunteer.styleJson)); } catch(e) {}
+    }
+  }, [selectedVolunteer.id]);
+
   return (
     <div className="max-w-screen-2xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8 h-[calc(100vh-64px)] overflow-hidden">
       <div className="w-full lg:w-[450px] shrink-0 space-y-6 overflow-y-auto pr-2 custom-scrollbar pb-10">
@@ -1338,18 +1351,19 @@ const VolunteerEditorView = ({
             </button>
             <button 
               onClick={async () => {
-                const existingIndex = volunteers.findIndex(v => v.id === selectedVolunteer.id);
+                const volunteerToSave = { ...selectedVolunteer, styleJson: JSON.stringify(style) };
+                const existingIndex = volunteers.findIndex(v => v.id === volunteerToSave.id);
                 try {
                   if (existingIndex !== -1) {
-                    await api.updateVolunteer(selectedVolunteer.id, selectedVolunteer);
+                    await api.updateVolunteer(volunteerToSave.id, volunteerToSave);
                   } else {
-                    await api.addVolunteer(selectedVolunteer);
+                    await api.addVolunteer(volunteerToSave);
                   }
                 } catch (e) { console.error('save volunteer API failed', e); }
                 setVolunteers(prev => {
-                  const idx = prev.findIndex(v => v.id === selectedVolunteer.id);
-                  if (idx !== -1) { const u = [...prev]; u[idx] = selectedVolunteer; return u; }
-                  return [...prev, selectedVolunteer];
+                  const idx = prev.findIndex(v => v.id === volunteerToSave.id);
+                  if (idx !== -1) { const u = [...prev]; u[idx] = volunteerToSave; return u; }
+                  return [...prev, volunteerToSave];
                 });
                 setView('volunteer_dashboard');
               }}
@@ -1438,7 +1452,11 @@ const App: React.FC = () => {
     
     if (foundFinisher) {
       setSelectedFinisher(foundFinisher);
-      setStyle(prev => ({ ...prev, type: 'finisher' }));
+      if (foundFinisher.styleJson) {
+        try { setStyle(JSON.parse(foundFinisher.styleJson)); } catch(e) {}
+      } else {
+        setStyle(prev => ({ ...prev, type: 'finisher' }));
+      }
       setView('search_result');
       return;
     }
@@ -1451,7 +1469,11 @@ const App: React.FC = () => {
 
     if (foundVolunteer) {
       setSelectedVolunteer(foundVolunteer);
-      setStyle(prev => ({ ...prev, type: 'volunteer' }));
+      if (foundVolunteer.styleJson) {
+        try { setStyle(JSON.parse(foundVolunteer.styleJson)); } catch(e) {}
+      } else {
+        setStyle(prev => ({ ...prev, type: 'volunteer' }));
+      }
       setView('search_result');
       return;
     }
@@ -1489,7 +1511,8 @@ const App: React.FC = () => {
           logoUrl: common.logoUrl,
           themeImageUrl: common.themeImageUrl,
           signatureUrl: common.signatureUrl,
-          certificateNumber: certNo
+          certificateNumber: certNo,
+          styleJson: JSON.stringify(newStyle)
         });
       });
 
@@ -1531,7 +1554,8 @@ const App: React.FC = () => {
           genderRank: row.genderRank || 'N/A',
           overallRank: row.overallRank || 'N/A',
           inspirationalQuote: quote,
-          date: common.date || '2025年01月01日'
+          date: common.date || '2025年01月01日',
+          styleJson: JSON.stringify(newStyle)
         });
       });
 

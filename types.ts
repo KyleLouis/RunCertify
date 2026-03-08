@@ -19,6 +19,7 @@ export interface FinisherData {
   themeImageUrl?: string; 
   runnerImageUrl?: string;
   signatureUrl?: string;
+  styleJson?: string;
 }
 
 export interface VolunteerData {
@@ -34,6 +35,7 @@ export interface VolunteerData {
   badgeImageUrl?: string;
   themeImageUrl?: string;
   runnerImageUrl?: string;
+  styleJson?: string;
 }
 
 export type CertificateType = 'finisher' | 'volunteer';

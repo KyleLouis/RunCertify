@@ -25,6 +25,9 @@ db.exec(`
   );
 `);
 
+try { db.exec('ALTER TABLE finishers ADD COLUMN styleJson TEXT'); } catch(e) {}
+try { db.exec('ALTER TABLE volunteers ADD COLUMN styleJson TEXT'); } catch(e) {}
+
 // Seed admin
 const admin = db.prepare('SELECT id FROM admins WHERE account = ?').get('13800009999');
 if (!admin) {
