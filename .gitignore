@@ -22,4 +22,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.migrated_prompt_history/*
+migrated_prompt_history/*
