@@ -266,7 +266,8 @@ const DashboardView = ({
   toggleAll, 
   onBatchDownload,
   isDownloadingZip,
-  races
+  races,
+  onDeleteFinisher
 }: { 
   finishers: FinisherData[], 
   setView: (v: AppView) => void,
@@ -276,7 +277,8 @@ const DashboardView = ({
   toggleAll: (ids: string[]) => void,
   onBatchDownload: () => void,
   isDownloadingZip: boolean,
-  races: string[]
+  races: string[],
+  onDeleteFinisher: (id: string) => void
 }) => {
   const [raceFilter, setRaceFilter] = useState('all');
   
@@ -381,6 +383,7 @@ const DashboardView = ({
                   >
                     预览证书
                   </button>
+                  <button onClick={() => onDeleteFinisher(f.id)} className="text-xs sm:text-sm font-bold text-red-500 hover:text-red-700 ml-3">删除</button>
                 </td>
               </tr>
             )) : (
@@ -702,7 +705,8 @@ const EditorView = ({
   setView, 
   setFinishers,
   finishers,
-  certificateRef
+  certificateRef,
+  onDeleteFinisher
 }: {
   selectedFinisher: FinisherData,
   setSelectedFinisher: (f: FinisherData) => void,
@@ -723,7 +727,8 @@ const EditorView = ({
   setView: (v: AppView) => void,
   setFinishers: React.Dispatch<React.SetStateAction<FinisherData[]>>,
   finishers: FinisherData[],
-  certificateRef: React.RefObject<HTMLDivElement | null>
+  certificateRef: React.RefObject<HTMLDivElement | null>,
+  onDeleteFinisher: (id: string) => void
 }) => {
   const getPrefix = (lang: Language) => lang === 'zh' ? '亲爱的' : 'Dear ';
   const getSuffix = (lang: Language) => lang === 'zh' ? '：' : ': ';
@@ -1008,6 +1013,14 @@ const EditorView = ({
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
               保存并返回
             </button>
+            {finishers.findIndex(f => f.id === selectedFinisher.id) !== -1 && (
+              <button
+                onClick={() => { onDeleteFinisher(selectedFinisher.id); setView('dashboard'); }}
+                className="flex-1 px-8 py-4 bg-red-600 text-white font-black rounded-2xl shadow-xl hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+              >
+                删除
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1026,7 +1039,8 @@ const VolunteerDashboardView = ({
   toggleAll,
   onBatchDownload,
   isDownloadingZip,
-  races
+  races,
+  onDeleteVolunteer
 }: { 
   volunteers: VolunteerData[], 
   setView: (v: AppView) => void,
@@ -1038,7 +1052,8 @@ const VolunteerDashboardView = ({
   toggleAll: (ids: string[]) => void,
   onBatchDownload: () => void,
   isDownloadingZip: boolean,
-  races: string[]
+  races: string[],
+  onDeleteVolunteer: (id: string) => void
 }) => {
   const [raceFilter, setRaceFilter] = useState('all');
   
@@ -1157,6 +1172,7 @@ const VolunteerDashboardView = ({
                   >
                     预览证书
                   </button>
+                  <button onClick={() => onDeleteVolunteer(v.id)} className="text-xs sm:text-sm font-bold text-red-500 hover:text-red-700 ml-3">删除</button>
                 </td>
               </tr>
             )) : (
@@ -1187,7 +1203,8 @@ const VolunteerEditorView = ({
   logoInputRef,
   themeInputRef,
   runnerInputRef,
-  signatureInputRef
+  signatureInputRef,
+  onDeleteVolunteer
 }: {
   selectedVolunteer: VolunteerData,
   setSelectedVolunteer: (v: VolunteerData) => void,
@@ -1204,7 +1221,8 @@ const VolunteerEditorView = ({
   logoInputRef: React.RefObject<HTMLInputElement | null>,
   themeInputRef: React.RefObject<HTMLInputElement | null>,
   runnerInputRef: React.RefObject<HTMLInputElement | null>,
-  signatureInputRef: React.RefObject<HTMLInputElement | null>
+  signatureInputRef: React.RefObject<HTMLInputElement | null>,
+  onDeleteVolunteer: (id: string) => void
 }) => {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8 h-[calc(100vh-64px)] overflow-hidden">
@@ -1339,6 +1357,14 @@ const VolunteerEditorView = ({
             >
               保存并返回
             </button>
+            {volunteers.findIndex(v => v.id === selectedVolunteer.id) !== -1 && (
+              <button
+                onClick={() => { onDeleteVolunteer(selectedVolunteer.id); setView('volunteer_dashboard'); }}
+                className="flex-1 px-8 py-4 bg-red-600 text-white font-black rounded-2xl shadow-xl hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+              >
+                删除
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1355,8 +1381,8 @@ const App: React.FC = () => {
   const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerData>(INITIAL_VOLUNTEER_DATA[0]);
 
   useEffect(() => {
-    api.getFinishers().then(setFinishers).catch(() => setFinishers(INITIAL_DATA));
-    api.getVolunteers().then(setVolunteers).catch(() => setVolunteers(INITIAL_VOLUNTEER_DATA));
+    api.getFinishers().then(setFinishers).catch(() => setFinishers([]));
+    api.getVolunteers().then(setVolunteers).catch(() => setVolunteers([]));
   }, []);
   const [style, setStyle] = useState<CertificateStyle>(INITIAL_STYLE);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1390,6 +1416,16 @@ const App: React.FC = () => {
     ...finishers.map(f => f.raceName),
     ...volunteers.map(v => v.raceName)
   ])).filter(Boolean) as string[];
+
+  const handleDeleteFinisher = async (id: string) => {
+    try { await api.deleteFinisher(id); } catch (e) { console.error('delete finisher failed', e); }
+    setFinishers(prev => prev.filter(f => f.id !== id));
+  };
+
+  const handleDeleteVolunteer = async (id: string) => {
+    try { await api.deleteVolunteer(id); } catch (e) { console.error('delete volunteer failed', e); }
+    setVolunteers(prev => prev.filter(v => v.id !== id));
+  };
 
   const handleSearch = (name: string, race: string) => {
     setSearchError(null);
@@ -1724,7 +1760,7 @@ const App: React.FC = () => {
           </div>
         )}
         {isAdmin && view === 'dashboard' && (
-          <DashboardView finishers={finishers} setView={setView} setSelectedFinisher={setSelectedFinisher} selectedIds={selectedIds} toggleSelection={toggleSelection} toggleAll={toggleAll} onBatchDownload={handleBatchDownload} isDownloadingZip={isDownloadingZip} races={uniqueRaces} />
+          <DashboardView finishers={finishers} setView={setView} setSelectedFinisher={setSelectedFinisher} selectedIds={selectedIds} toggleSelection={toggleSelection} toggleAll={toggleAll} onBatchDownload={handleBatchDownload} isDownloadingZip={isDownloadingZip} races={uniqueRaces} onDeleteFinisher={handleDeleteFinisher} />
         )}
         {isAdmin && view === 'volunteer_dashboard' && (
           <VolunteerDashboardView 
@@ -1739,6 +1775,7 @@ const App: React.FC = () => {
             onBatchDownload={handleBatchDownload}
             isDownloadingZip={isDownloadingZip}
             races={uniqueRaces}
+            onDeleteVolunteer={handleDeleteVolunteer}
           />
         )}
         {isAdmin && view === 'volunteer_editor' && (
@@ -1759,6 +1796,7 @@ const App: React.FC = () => {
             themeInputRef={volunteerThemeInputRef}
             runnerInputRef={volunteerRunnerInputRef}
             signatureInputRef={volunteerSignatureInputRef}
+            onDeleteVolunteer={handleDeleteVolunteer}
           />
         )}
         {isAdmin && view === 'batch_import' && (
@@ -1781,6 +1819,7 @@ const App: React.FC = () => {
             handleSignatureUpload={handleSignatureUpload}
             logoInputRef={logoInputRef} themeInputRef={themeInputRef} runnerInputRef={runnerInputRef} signatureInputRef={signatureInputRef}
             setView={setView} setFinishers={setFinishers} finishers={finishers} certificateRef={certificateRef}
+            onDeleteFinisher={handleDeleteFinisher}
           />
         )}
         {isAdmin && view === 'preview' && (
