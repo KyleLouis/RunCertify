@@ -7,6 +7,7 @@ import Certificate from './components/Certificate';
 import VolunteerCertificate from './components/VolunteerCertificate';
 import { AppView, FinisherData, VolunteerData, CertificateStyle, Language, Orientation, CertificateType } from './types';
 import { generateInspirationalQuote, generateCustomBadge, generateBatchInspirationalQuotes } from './geminiService';
+import { api } from './src/api';
 
 const INITIAL_DATA: FinisherData[] = [
   {
@@ -189,17 +190,18 @@ const HomeView = ({ onSearch, goToLogin, searchError, races }: { onSearch: (name
   );
 };
 
-const LoginView = ({ onLogin, onBack }: { onLogin: () => void, onBack: () => void }) => {
+const LoginView = ({ onLogin, onBack }: { onLogin: (token: string) => void, onBack: () => void }) => {
   const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Updated credentials: 13800009999 / 123456
-    if (account === '13800009999' && password === '123456') {
-      onLogin();
-    } else {
+    try {
+      const { token } = await api.login(account, password);
+      localStorage.setItem('token', token);
+      onLogin(token);
+    } catch {
       setError('账号或密码错误，请重试');
     }
   };
@@ -699,6 +701,7 @@ const EditorView = ({
   signatureInputRef,
   setView, 
   setFinishers,
+  finishers,
   certificateRef
 }: {
   selectedFinisher: FinisherData,
@@ -719,6 +722,7 @@ const EditorView = ({
   signatureInputRef: React.RefObject<HTMLInputElement | null>,
   setView: (v: AppView) => void,
   setFinishers: React.Dispatch<React.SetStateAction<FinisherData[]>>,
+  finishers: FinisherData[],
   certificateRef: React.RefObject<HTMLDivElement | null>
 }) => {
   const getPrefix = (lang: Language) => lang === 'zh' ? '亲爱的' : 'Dear ';
@@ -983,14 +987,18 @@ const EditorView = ({
               全屏预览
             </button>
             <button 
-              onClick={() => {
-                setFinishers(prev => {
-                  const existingIndex = prev.findIndex(f => f.id === selectedFinisher.id);
+              onClick={async () => {
+                const existingIndex = finishers.findIndex(f => f.id === selectedFinisher.id);
+                try {
                   if (existingIndex !== -1) {
-                    const updated = [...prev];
-                    updated[existingIndex] = selectedFinisher;
-                    return updated;
+                    await api.updateFinisher(selectedFinisher.id, selectedFinisher);
+                  } else {
+                    await api.addFinisher(selectedFinisher);
                   }
+                } catch (e) { console.error('save finisher API failed', e); }
+                setFinishers(prev => {
+                  const idx = prev.findIndex(f => f.id === selectedFinisher.id);
+                  if (idx !== -1) { const u = [...prev]; u[idx] = selectedFinisher; return u; }
                   return [...prev, selectedFinisher];
                 });
                 setView('dashboard');
@@ -1170,6 +1178,7 @@ const VolunteerEditorView = ({
   setStyle, 
   setView, 
   setVolunteers,
+  volunteers,
   certificateRef,
   handleLogoUpload,
   handleThemeImageUpload,
@@ -1186,6 +1195,7 @@ const VolunteerEditorView = ({
   setStyle: (s: CertificateStyle) => void,
   setView: (v: AppView) => void,
   setVolunteers: React.Dispatch<React.SetStateAction<VolunteerData[]>>,
+  volunteers: VolunteerData[],
   certificateRef: React.RefObject<HTMLDivElement | null>,
   handleLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void,
   handleThemeImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void,
@@ -1309,14 +1319,18 @@ const VolunteerEditorView = ({
               全屏预览
             </button>
             <button 
-              onClick={() => {
-                setVolunteers(prev => {
-                  const existingIndex = prev.findIndex(v => v.id === selectedVolunteer.id);
+              onClick={async () => {
+                const existingIndex = volunteers.findIndex(v => v.id === selectedVolunteer.id);
+                try {
                   if (existingIndex !== -1) {
-                    const updated = [...prev];
-                    updated[existingIndex] = selectedVolunteer;
-                    return updated;
+                    await api.updateVolunteer(selectedVolunteer.id, selectedVolunteer);
+                  } else {
+                    await api.addVolunteer(selectedVolunteer);
                   }
+                } catch (e) { console.error('save volunteer API failed', e); }
+                setVolunteers(prev => {
+                  const idx = prev.findIndex(v => v.id === selectedVolunteer.id);
+                  if (idx !== -1) { const u = [...prev]; u[idx] = selectedVolunteer; return u; }
                   return [...prev, selectedVolunteer];
                 });
                 setView('volunteer_dashboard');
@@ -1335,10 +1349,15 @@ const VolunteerEditorView = ({
 const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [view, setView] = useState<AppView>('home');
-  const [finishers, setFinishers] = useState<FinisherData[]>(INITIAL_DATA);
-  const [volunteers, setVolunteers] = useState<VolunteerData[]>(INITIAL_VOLUNTEER_DATA);
+  const [finishers, setFinishers] = useState<FinisherData[]>([]);
+  const [volunteers, setVolunteers] = useState<VolunteerData[]>([]);
   const [selectedFinisher, setSelectedFinisher] = useState<FinisherData>(INITIAL_DATA[0]);
   const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerData>(INITIAL_VOLUNTEER_DATA[0]);
+
+  useEffect(() => {
+    api.getFinishers().then(setFinishers).catch(() => setFinishers(INITIAL_DATA));
+    api.getVolunteers().then(setVolunteers).catch(() => setVolunteers(INITIAL_VOLUNTEER_DATA));
+  }, []);
   const [style, setStyle] = useState<CertificateStyle>(INITIAL_STYLE);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -1438,6 +1457,7 @@ const App: React.FC = () => {
         });
       });
 
+      try { await api.batchVolunteers(newVolunteers); } catch (e) { console.error('batch volunteers API failed', e); }
       setVolunteers(prev => [...prev, ...newVolunteers]);
       setStyle(newStyle);
       setBatchProgress(null);
@@ -1482,6 +1502,7 @@ const App: React.FC = () => {
       setBatchProgress(prev => prev ? { ...prev, current: Math.min(i + CHUNK_SIZE, rows.length) } : null);
     }
 
+    try { await api.batchFinishers(newFinishers); } catch (e) { console.error('batch finishers API failed', e); }
     setFinishers(prev => [...prev, ...newFinishers]);
     setStyle(newStyle);
     setBatchProgress(null);
@@ -1727,7 +1748,8 @@ const App: React.FC = () => {
             style={style} 
             setStyle={setStyle} 
             setView={setView} 
-            setVolunteers={setVolunteers} 
+            setVolunteers={setVolunteers}
+            volunteers={volunteers}
             certificateRef={certificateRef}
             handleLogoUpload={handleVolunteerLogoUpload}
             handleThemeImageUpload={handleVolunteerThemeImageUpload}
@@ -1758,7 +1780,7 @@ const App: React.FC = () => {
             handleLogoUpload={handleLogoUpload} handleThemeImageUpload={handleThemeImageUpload} handleRunnerImageUpload={handleRunnerImageUpload}
             handleSignatureUpload={handleSignatureUpload}
             logoInputRef={logoInputRef} themeInputRef={themeInputRef} runnerInputRef={runnerInputRef} signatureInputRef={signatureInputRef}
-            setView={setView} setFinishers={setFinishers} certificateRef={certificateRef}
+            setView={setView} setFinishers={setFinishers} finishers={finishers} certificateRef={certificateRef}
           />
         )}
         {isAdmin && view === 'preview' && (
