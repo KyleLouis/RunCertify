@@ -267,7 +267,9 @@ const DashboardView = ({
   onBatchDownload,
   isDownloadingZip,
   races,
-  onDeleteFinisher
+  onDeleteFinisher,
+  style,
+  setStyle
 }: { 
   finishers: FinisherData[], 
   setView: (v: AppView) => void,
@@ -278,7 +280,9 @@ const DashboardView = ({
   onBatchDownload: () => void,
   isDownloadingZip: boolean,
   races: string[],
-  onDeleteFinisher: (id: string) => void
+  onDeleteFinisher: (id: string) => void,
+  style: CertificateStyle,
+  setStyle: (s: CertificateStyle) => void
 }) => {
   const [raceFilter, setRaceFilter] = useState('all');
   
@@ -378,7 +382,7 @@ const DashboardView = ({
                 <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-slate-700 text-sm sm:text-base">{f.finishTime}</td>
                 <td className="px-4 sm:px-6 py-3 sm:py-4">
                   <button 
-                    onClick={() => { setSelectedFinisher(f); setView('preview'); }}
+                    onClick={() => { setSelectedFinisher(f); setStyle({ ...style, type: 'finisher' }); setView('preview'); }}
                     className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-800"
                   >
                     预览证书
@@ -1784,7 +1788,7 @@ const App: React.FC = () => {
           </div>
         )}
         {isAdmin && view === 'dashboard' && (
-          <DashboardView finishers={finishers} setView={setView} setSelectedFinisher={setSelectedFinisher} selectedIds={selectedIds} toggleSelection={toggleSelection} toggleAll={toggleAll} onBatchDownload={handleBatchDownload} isDownloadingZip={isDownloadingZip} races={uniqueRaces} onDeleteFinisher={handleDeleteFinisher} />
+          <DashboardView finishers={finishers} setView={setView} setSelectedFinisher={setSelectedFinisher} selectedIds={selectedIds} toggleSelection={toggleSelection} toggleAll={toggleAll} onBatchDownload={handleBatchDownload} isDownloadingZip={isDownloadingZip} races={uniqueRaces} onDeleteFinisher={handleDeleteFinisher} style={style} setStyle={setStyle} />
         )}
         {isAdmin && view === 'volunteer_dashboard' && (
           <VolunteerDashboardView 
