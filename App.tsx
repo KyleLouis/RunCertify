@@ -326,7 +326,10 @@ const DashboardView = ({
             </button>
           )}
           <button 
-            onClick={() => setView('batch_import')}
+            onClick={() => {
+              setStyle({ ...style, type: 'finisher' });
+              setView('batch_import');
+            }}
             className="flex-1 sm:flex-none border-2 border-indigo-100 text-indigo-600 hover:bg-indigo-50 font-bold px-6 py-3 rounded-xl transition-all text-sm sm:text-base"
           >
             批量录入
