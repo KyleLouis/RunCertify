@@ -27,8 +27,8 @@ router.post('/quotes/batch', auth, async (req, res) => {
   try {
     const runnerInfo = runners.map(r => `姓名:${r.name}, 项目:${r.category}, 成绩:${r.finishTime}`).join('\n');
     const prompt = lang === 'zh'
-      ? `你是一位顶尖体育励志作家。请为以下选手分别创作一句优美的完赛格言。要求：1.每一句都必须以 "亲爱的[选手姓名]：" 开头。2.结合跑步精神，富有诗意和深度。3.每句格言字数在30-40字左右。\n选手列表：\n${runnerInfo}`
-      : `You are a top sports motivational writer. Create a beautiful finisher motto for each runner below. Requirements: 1. Each must start with "Dear [Name]: ". 2. Deep and poetic. 3. Around 20 words per motto.\nRunner list:\n${runnerInfo}`;
+      ? `你是一位顶尖体育励志作家。请为以下选手分别创作一句优美的完赛格言。要求：1.每一句都必须以 "亲爱的[选手姓名]：" 开头。2.结合跑步精神，富有诗意和深度。3.必须基于选手的姓名和本次项目类别进行个性化生成，确保每个人的名言都不一样。4.每句格言字数在30-40字左右。\n选手列表：\n${runnerInfo}`
+      : `You are a top sports motivational writer. Create a beautiful finisher motto for each runner below. Requirements: 1. Each must start with "Dear [Name]: ". 2. Deep and poetic. 3. Generate unique and personalized quotes for each runner based on their name and category. 4. Around 20 words per motto.\nRunner list:\n${runnerInfo}`;
     const { Type } = await import('@google/genai');
     const response = await callGemini(prompt, {
       responseMimeType: 'application/json',

@@ -453,7 +453,8 @@ const BatchImportView = ({
         bibNumber: parts[1] || '',
         finishTime: parts[2] || '',
         overallRank: parts[3] || '',
-        category: parts[4] || '全程马拉松'
+        genderRank: parts[4] || '',
+        category: parts[5] || '全程马拉松'
       };
     }).filter(r => r.name !== '');
     setParsedRows(rows);
@@ -659,8 +660,8 @@ const BatchImportView = ({
                       </>
                     ) : (
                       <>
-                        张杰瑞 A2045 03:45:21 312 全程马拉松<br/>
-                        李安娜 B1088 01:52:10 520 半程马拉松
+                        张杰瑞 A2045 03:45:21 312 300 全程马拉松<br/>
+                        李安娜 B1088 01:52:10 520 200 半程马拉松
                       </>
                     )}
                   </code>
