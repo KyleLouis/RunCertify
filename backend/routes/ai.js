@@ -27,20 +27,17 @@ router.post('/quotes/batch', auth, async (req, res) => {
   try {
     const runnerInfo = runners.map(r => `姓名:${r.name}, 项目:${r.category}, 成绩:${r.finishTime}`).join('\n');
     const prompt = lang === 'zh'
-      ? `你是一位顶尖体育励志作家。请为以下选手分别创作一句优美的完赛格言。要求：1.每一句都必须以 "亲爱的[选手姓名]：" 开头。2.结合跑步精神，富有诗意和深度。3.必须基于选手的姓名和本次项目类别进行个性化生成，确保每个人的名言都不一样。4.每句格言字数在30-40字左右。\n选手列表：\n${runnerInfo}`
-      : `You are a top sports motivational writer. Create a beautiful finisher motto for each runner below. Requirements: 1. Each must start with "Dear [Name]: ". 2. Deep and poetic. 3. Generate unique and personalized quotes for each runner based on their name and category. 4. Around 20 words per motto.\nRunner list:\n${runnerInfo}`;
-    const { Type } = await import('@google/genai');
+      ? `你是一位顶尖体育励志作家。请为以下选手分别创作一句优美的完赛格言。要求：1.每一句都必须以 "亲爱的[选手姓名]：" 开头。2.结合跑步精神，富有诗意和深度。3.必须基于选手的姓名和本次项目类别进行个性化生成，确保每个人的名言都不一样。4.每句格言字数在30-40字左右。\n请返回一个合法的 JSON 对象，包含一个名为 'quotes' 的数组，数组中每个元素包含 'name' (选手姓名) 和 'quote' (名言) 字段。\n选手列表：\n${runnerInfo}`
+      : `You are a top sports motivational writer. Create a beautiful finisher motto for each runner below. Requirements: 1. Each must start with "Dear [Name]: ". 2. Deep and poetic. 3. Generate unique and personalized quotes for each runner based on their name and category. 4. Around 20 words per motto.\nPlease return a valid JSON object containing a 'quotes' array. Each item in the array must have a 'name' and 'quote' field.\nRunner list:\n${runnerInfo}`;
     const response = await callGemini(prompt, {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: { quotes: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, quote: { type: Type.STRING } }, required: ['name', 'quote'] } } },
-        required: ['quotes']
-      }
+      responseMimeType: 'application/json'
     });
-    const result = JSON.parse(response.text || '{"quotes":[]}');
+    let rawText = response.text || '{"quotes":[]}';
+    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const result = JSON.parse(rawText);
     res.json(result.quotes);
   } catch (err) {
+    console.error('Batch AI error:', err);
     res.json(runners.map(r => ({ name: r.name, quote: `${lang === 'zh' ? '亲爱的' : 'Dear '}${r.name}${lang === 'zh' ? '：' : ': '}每一步都是对自我的超越。` })));
   }
 });

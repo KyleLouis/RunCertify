@@ -39,4 +39,15 @@ router.delete('/:id', auth, (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/batch-delete', auth, (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.json({ count: 0 });
+  }
+  const placeholders = ids.map(() => '?').join(',');
+  const stmt = db.prepare(`DELETE FROM volunteers WHERE id IN (${placeholders})`);
+  stmt.run(...ids);
+  res.json({ count: ids.length });
+});
+
 module.exports = router;

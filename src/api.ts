@@ -30,6 +30,7 @@ export const api = {
   addFinisher: (f: any) => req<any>('POST', '/finishers', f),
   updateFinisher: (id: string, f: any) => req<any>('PUT', `/finishers/${id}`, f),
   deleteFinisher: (id: string) => req<any>('DELETE', `/finishers/${id}`),
+  batchDeleteFinishers: (ids: string[]) => req<any>('POST', '/finishers/batch-delete', { ids }),
   batchFinishers: (items: any[]) => req<any>('POST', '/finishers/batch', items),
 
   getVolunteers: (race?: string) =>
@@ -37,6 +38,7 @@ export const api = {
   addVolunteer: (v: any) => req<any>('POST', '/volunteers', v),
   updateVolunteer: (id: string, v: any) => req<any>('PUT', `/volunteers/${id}`, v),
   deleteVolunteer: (id: string) => req<any>('DELETE', `/volunteers/${id}`),
+  batchDeleteVolunteers: (ids: string[]) => req<any>('POST', '/volunteers/batch-delete', { ids }),
   batchVolunteers: (items: any[]) => req<any>('POST', '/volunteers/batch', items),
 
   getRaces: () => fetch(`${BASE}/races`).then(r => r.json()) as Promise<string[]>,
