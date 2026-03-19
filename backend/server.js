@@ -1,13 +1,17 @@
 require('dotenv').config({ path: '.env.local' });
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const db = require('./db');
+const { getImagePath } = require('./imageHelper');
 
 const app = express();
 app.use(cors());
 // 增加 JSON body 大小限制，支持批量导入大量数据及 base64 图片
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
+app.use('/api/images', express.static(getImagePath()));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/finishers', require('./routes/finishers'));

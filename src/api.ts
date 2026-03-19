@@ -31,6 +31,8 @@ export const api = {
 
   getFinishers: (race?: string) =>
     req<any[]>('GET', `/finishers${race ? `?race=${encodeURIComponent(race)}` : ''}`),
+  getFinisherById: (id: string) => req<any>('GET', `/finishers/${id}`),
+  searchFinisher: (name: string, race: string) => req<any>('GET', `/finishers/search?name=${encodeURIComponent(name)}${race ? `&race=${encodeURIComponent(race)}` : ''}`),
   addFinisher: (f: any) => req<any>('POST', '/finishers', f),
   updateFinisher: (id: string, f: any) => req<any>('PUT', `/finishers/${id}`, f),
   deleteFinisher: (id: string) => req<any>('DELETE', `/finishers/${id}`),
@@ -39,6 +41,8 @@ export const api = {
 
   getVolunteers: (race?: string) =>
     req<any[]>('GET', `/volunteers${race ? `?race=${encodeURIComponent(race)}` : ''}`),
+  getVolunteerById: (id: string) => req<any>('GET', `/volunteers/${id}`),
+  searchVolunteer: (name: string, race: string) => req<any>('GET', `/volunteers/search?name=${encodeURIComponent(name)}${race ? `&race=${encodeURIComponent(race)}` : ''}`),
   addVolunteer: (v: any) => req<any>('POST', '/volunteers', v),
   updateVolunteer: (id: string, v: any) => req<any>('PUT', `/volunteers/${id}`, v),
   deleteVolunteer: (id: string) => req<any>('DELETE', `/volunteers/${id}`),

@@ -23,4 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 migrated_prompt_history/*
-backend/*.db
+backend/data/images/*
+# backend/*.db

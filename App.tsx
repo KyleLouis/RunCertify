@@ -396,7 +396,16 @@ const DashboardView = ({
                 <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-slate-700 text-sm sm:text-base">{f.finishTime}</td>
                 <td className="px-4 sm:px-6 py-3 sm:py-4">
                   <button 
-                    onClick={() => { setSelectedFinisher(f); setStyle({ ...style, type: 'finisher' }); setView('preview'); }}
+                    onClick={async () => {
+                      try {
+                        const fullData = await api.getFinisherById(f.id);
+                        setSelectedFinisher(fullData);
+                        setStyle({ ...style, type: 'finisher' });
+                        setView('preview');
+                      } catch (e) {
+                        console.error('Failed to fetch finisher details', e);
+                      }
+                    }}
                     className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-800"
                   >
                     预览证书
@@ -1020,17 +1029,18 @@ const EditorView = ({
               onClick={async () => {
                 const finisherToSave = { ...selectedFinisher, styleJson: JSON.stringify(style) };
                 const existingIndex = finishers.findIndex(f => f.id === finisherToSave.id);
+                let savedData = finisherToSave;
                 try {
                   if (existingIndex !== -1) {
-                    await api.updateFinisher(finisherToSave.id, finisherToSave);
+                    savedData = await api.updateFinisher(finisherToSave.id, finisherToSave);
                   } else {
-                    await api.addFinisher(finisherToSave);
+                    savedData = await api.addFinisher(finisherToSave);
                   }
                 } catch (e) { console.error('save finisher API failed', e); }
                 setFinishers(prev => {
-                  const idx = prev.findIndex(f => f.id === finisherToSave.id);
-                  if (idx !== -1) { const u = [...prev]; u[idx] = finisherToSave; return u; }
-                  return [...prev, finisherToSave];
+                  const idx = prev.findIndex(f => f.id === savedData.id);
+                  if (idx !== -1) { const u = [...prev]; u[idx] = savedData; return u; }
+                  return [...prev, savedData];
                 });
                 setView('dashboard');
               }}
@@ -1200,10 +1210,15 @@ const VolunteerDashboardView = ({
                 <td className="px-4 sm:px-6 py-3 sm:py-4 font-mono text-indigo-600 font-bold text-sm sm:text-base">{v.certificateNumber}</td>
                 <td className="px-4 sm:px-6 py-3 sm:py-4">
                   <button 
-                    onClick={() => { 
-                      setSelectedVolunteer(v); 
-                      setStyle({ ...style, type: 'volunteer' });
-                      setView('preview'); 
+                    onClick={async () => { 
+                      try {
+                        const fullData = await api.getVolunteerById(v.id);
+                        setSelectedVolunteer(fullData); 
+                        setStyle({ ...style, type: 'volunteer' });
+                        setView('preview'); 
+                      } catch (e) {
+                        console.error('Failed to fetch volunteer details', e);
+                      }
                     }}
                     className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-800"
                   >
@@ -1383,17 +1398,18 @@ const VolunteerEditorView = ({
               onClick={async () => {
                 const volunteerToSave = { ...selectedVolunteer, styleJson: JSON.stringify(style) };
                 const existingIndex = volunteers.findIndex(v => v.id === volunteerToSave.id);
+                let savedData = volunteerToSave;
                 try {
                   if (existingIndex !== -1) {
-                    await api.updateVolunteer(volunteerToSave.id, volunteerToSave);
+                    savedData = await api.updateVolunteer(volunteerToSave.id, volunteerToSave);
                   } else {
-                    await api.addVolunteer(volunteerToSave);
+                    savedData = await api.addVolunteer(volunteerToSave);
                   }
                 } catch (e) { console.error('save volunteer API failed', e); }
                 setVolunteers(prev => {
-                  const idx = prev.findIndex(v => v.id === volunteerToSave.id);
-                  if (idx !== -1) { const u = [...prev]; u[idx] = volunteerToSave; return u; }
-                  return [...prev, volunteerToSave];
+                  const idx = prev.findIndex(v => v.id === savedData.id);
+                  if (idx !== -1) { const u = [...prev]; u[idx] = savedData; return u; }
+                  return [...prev, savedData];
                 });
                 setView('volunteer_dashboard');
               }}
@@ -1501,16 +1517,11 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSearch = (name: string, race: string) => {
+  const handleSearch = async (name: string, race: string) => {
     setSearchError(null);
     
-    // Search in finishers first
-    const foundFinisher = finishers.find(f => 
-      f.name === name.trim() && 
-      (race === '' || f.raceName === race)
-    );
-    
-    if (foundFinisher) {
+    try {
+      const foundFinisher = await api.searchFinisher(name.trim(), race);
       setSelectedFinisher(foundFinisher);
       if (foundFinisher.styleJson) {
         try { setStyle(JSON.parse(foundFinisher.styleJson)); } catch(e) {}
@@ -1519,15 +1530,12 @@ const App: React.FC = () => {
       }
       setView('search_result');
       return;
+    } catch (e) {
+      // Not found in finishers, try volunteers
     }
 
-    // Search in volunteers
-    const foundVolunteer = volunteers.find(v => 
-      v.name === name.trim() && 
-      (race === '' || v.raceName === race)
-    );
-
-    if (foundVolunteer) {
+    try {
+      const foundVolunteer = await api.searchVolunteer(name.trim(), race);
       setSelectedVolunteer(foundVolunteer);
       if (foundVolunteer.styleJson) {
         try { setStyle(JSON.parse(foundVolunteer.styleJson)); } catch(e) {}
@@ -1536,6 +1544,8 @@ const App: React.FC = () => {
       }
       setView('search_result');
       return;
+    } catch (e) {
+      // Not found in volunteers either
     }
 
     setSearchError('未找到该记录，请检查姓名或赛事选择。');
@@ -1674,8 +1684,17 @@ const App: React.FC = () => {
     const selectedItems = currentList.filter(item => selectedIds.has(item.id));
     
     for (const item of selectedItems) {
-      setBatchRunnerToRender(item);
-      await new Promise(resolve => setTimeout(resolve, 300));
+      let fullItem = item;
+      try {
+        fullItem = isVolunteer 
+          ? await api.getVolunteerById(item.id) 
+          : await api.getFinisherById(item.id);
+      } catch (e) {
+        console.error(`Failed to fetch details for ${item.name}`, e);
+      }
+      
+      setBatchRunnerToRender(fullItem);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Give it a bit more time to render images
       const element = hiddenCaptureRef.current;
       if (element) {
         try {
