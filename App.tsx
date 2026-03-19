@@ -265,6 +265,7 @@ const DashboardView = ({
   toggleSelection, 
   toggleAll, 
   onBatchDownload,
+  onBatchDelete,
   isDownloadingZip,
   races,
   onDeleteFinisher,
@@ -316,7 +317,7 @@ const DashboardView = ({
           </div>
         </div>
         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-          {selectedInView.length > 0 && (
+          {selectedInView.length > 0 ? (
             <>
               <button 
                 onClick={onBatchDelete}
@@ -334,7 +335,7 @@ const DashboardView = ({
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               </button>
             </>
-          )}
+          ) : null}
           <button 
             onClick={() => {
               setStyle({ ...style, type: 'finisher' });
@@ -1063,6 +1064,7 @@ const VolunteerDashboardView = ({
   toggleSelection,
   toggleAll,
   onBatchDownload,
+  onBatchDelete,
   isDownloadingZip,
   races,
   onDeleteVolunteer
@@ -1112,7 +1114,7 @@ const VolunteerDashboardView = ({
           </div>
         </div>
         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-          {selectedInView.length > 0 && (
+          {selectedInView.length > 0 ? (
             <>
               <button 
                 onClick={onBatchDelete}
@@ -1130,7 +1132,7 @@ const VolunteerDashboardView = ({
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               </button>
             </>
-          )}
+          ) : null}
           <button 
             onClick={() => {
               setStyle({ ...style, type: 'volunteer' });
