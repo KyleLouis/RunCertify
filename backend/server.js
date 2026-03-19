@@ -5,7 +5,9 @@ const db = require('./db');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+// 增加 JSON body 大小限制，支持批量导入大量数据及 base64 图片
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/finishers', require('./routes/finishers'));

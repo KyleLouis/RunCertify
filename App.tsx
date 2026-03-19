@@ -1576,11 +1576,17 @@ const App: React.FC = () => {
         });
       });
 
-      try { await api.batchVolunteers(newVolunteers); } catch (e) { console.error('batch volunteers API failed', e); }
-      setVolunteers(prev => [...prev, ...newVolunteers]);
-      setStyle(newStyle);
-      setBatchProgress(null);
-      setView('volunteer_dashboard');
+      try { 
+        await api.batchVolunteers(newVolunteers); 
+        setVolunteers(prev => [...prev, ...newVolunteers]);
+        setStyle(newStyle);
+        setBatchProgress(null);
+        setView('volunteer_dashboard');
+      } catch (e) { 
+        console.error('batch volunteers API failed', e); 
+        alert('批量导入失败：' + (e as Error).message);
+        setBatchProgress(null);
+      }
       return;
     }
 
@@ -1622,11 +1628,17 @@ const App: React.FC = () => {
       setBatchProgress(prev => prev ? { ...prev, current: Math.min(i + CHUNK_SIZE, rows.length) } : null);
     }
 
-    try { await api.batchFinishers(newFinishers); } catch (e) { console.error('batch finishers API failed', e); }
-    setFinishers(prev => [...prev, ...newFinishers]);
-    setStyle(newStyle);
-    setBatchProgress(null);
-    setView('dashboard');
+    try { 
+      await api.batchFinishers(newFinishers); 
+      setFinishers(prev => [...prev, ...newFinishers]);
+      setStyle(newStyle);
+      setBatchProgress(null);
+      setView('dashboard');
+    } catch (e) { 
+      console.error('batch finishers API failed', e); 
+      alert('批量导入失败：' + (e as Error).message);
+      setBatchProgress(null);
+    }
   };
 
   const toggleSelection = (id: string) => {
