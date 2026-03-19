@@ -1657,7 +1657,7 @@ const App: React.FC = () => {
     const zip = new JSZip();
     const folder = zip.folder("RunCertify_Batch_Certificates");
     
-    const isVolunteer = style.type === 'volunteer';
+    const isVolunteer = view === 'volunteer_dashboard';
     const currentList = isVolunteer ? volunteers : finishers;
     const selectedItems = currentList.filter(item => selectedIds.has(item.id));
     
@@ -1937,10 +1937,16 @@ const App: React.FC = () => {
       <div className="fixed -left-[4000px] top-0 pointer-events-none opacity-0" aria-hidden="true">
           <div ref={hiddenCaptureRef}>
              {batchRunnerToRender && (
-               style.type === 'volunteer' ? (
-                 <VolunteerCertificate data={batchRunnerToRender as VolunteerData} style={style} />
+               view === 'volunteer_dashboard' ? (
+                 <VolunteerCertificate 
+                   data={batchRunnerToRender as VolunteerData} 
+                   style={batchRunnerToRender.styleJson ? JSON.parse(batchRunnerToRender.styleJson) : style} 
+                 />
                ) : (
-                 <Certificate data={batchRunnerToRender as FinisherData} style={style} />
+                 <Certificate 
+                   data={batchRunnerToRender as FinisherData} 
+                   style={batchRunnerToRender.styleJson ? JSON.parse(batchRunnerToRender.styleJson) : style} 
+                 />
                )
              )}
           </div>

@@ -12,7 +12,11 @@ function headers() {
 }
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const url = method === 'GET' 
+    ? `${BASE}${path}${path.includes('?') ? '&' : '?'}t=${Date.now()}` 
+    : `${BASE}${path}`;
+    
+  const res = await fetch(url, {
     method,
     headers: headers(),
     body: body !== undefined ? JSON.stringify(body) : undefined
