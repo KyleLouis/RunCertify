@@ -8,7 +8,7 @@ function vals(v) {
   return [v.id,v.name,v.raceName,v.role,v.serviceHours??null,v.date,v.certificateNumber,v.logoUrl??null,v.signatureUrl??null,v.badgeImageUrl??null,v.themeImageUrl??null,v.runnerImageUrl??null,v.styleJson??null];
 }
 
-router.get('/', auth, (req, res) => {
+router.get('/', (req, res) => {
   const { race } = req.query;
   const rows = race
     ? db.prepare('SELECT * FROM volunteers WHERE raceName = ?').all(race)

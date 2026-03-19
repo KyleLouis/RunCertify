@@ -1422,9 +1422,13 @@ const App: React.FC = () => {
   const [selectedFinisher, setSelectedFinisher] = useState<FinisherData>(INITIAL_DATA[0]);
   const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerData>(INITIAL_VOLUNTEER_DATA[0]);
 
-  useEffect(() => {
+  const fetchAllData = () => {
     api.getFinishers().then(setFinishers).catch(() => setFinishers([]));
     api.getVolunteers().then(setVolunteers).catch(() => setVolunteers([]));
+  };
+
+  useEffect(() => {
+    fetchAllData();
   }, []);
   const [style, setStyle] = useState<CertificateStyle>(INITIAL_STYLE);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1810,8 +1814,12 @@ const App: React.FC = () => {
         <Header currentView={view} setView={setView} onLogout={() => { localStorage.removeItem('token'); setIsAdmin(false); setView('home'); }} />
       )}
       <main className="flex-1 bg-slate-50/50">
-        {view === 'home' && <HomeView onSearch={handleSearch} goToLogin={() => { if (localStorage.getItem('token')) { setIsAdmin(true); setView('dashboard'); } else { setView('login'); } }} searchError={searchError} races={uniqueRaces} />}
-        {view === 'login' && <LoginView onLogin={() => { setIsAdmin(true); setView('dashboard'); }} onBack={() => setView('home')} />}
+        {view === 'home' && <HomeView onSearch={handleSearch} goToLogin={() => { if (localStorage.getItem('token')) { setIsAdmin(true); fetchAllData(); setView('dashboard'); } else { setView('login'); } }} searchError={searchError} races={uniqueRaces} />}
+        {view === 'login' && <LoginView onLogin={(token) => { 
+          setIsAdmin(true); 
+          fetchAllData();
+          setView('dashboard'); 
+        }} onBack={() => setView('home')} />}
         {view === 'search_result' && (
           <div className="min-h-screen flex flex-col items-center bg-white p-6 sm:p-12">
             <div className="w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center mb-10 gap-6">

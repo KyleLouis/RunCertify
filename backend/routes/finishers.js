@@ -8,7 +8,7 @@ function vals(f) {
   return [f.id,f.name,f.bibNumber??null,f.raceName,f.category,f.finishTime,f.netTime??null,f.genderRank??null,f.overallRank??null,f.date,f.inspirationalQuote??null,f.badgeImageUrl??null,f.logoUrl??null,f.themeImageUrl??null,f.runnerImageUrl??null,f.signatureUrl??null,f.styleJson??null];
 }
 
-router.get('/', auth, (req, res) => {
+router.get('/', (req, res) => {
   const { race } = req.query;
   const rows = race
     ? db.prepare('SELECT * FROM finishers WHERE raceName = ?').all(race)
