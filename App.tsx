@@ -9,6 +9,12 @@ import { AppView, FinisherData, VolunteerData, CertificateStyle, Language, Orien
 import { generateInspirationalQuote, generateCustomBadge, generateBatchInspirationalQuotes } from './geminiService';
 import { api } from './src/api';
 
+const getCreatedAtTimestamp = (createdAt?: string) => {
+  if (!createdAt) return 0;
+  const timestamp = new Date(createdAt).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
 const INITIAL_DATA: FinisherData[] = [
   {
     id: '1',
@@ -1036,13 +1042,16 @@ const EditorView = ({
                   } else {
                     savedData = await api.addFinisher(finisherToSave);
                   }
-                } catch (e) { console.error('save finisher API failed', e); }
-                setFinishers(prev => {
-                  const idx = prev.findIndex(f => f.id === savedData.id);
-                  if (idx !== -1) { const u = [...prev]; u[idx] = savedData; return u; }
-                  return [...prev, savedData];
-                });
-                setView('dashboard');
+                  setFinishers(prev => {
+                    const idx = prev.findIndex(f => f.id === savedData.id);
+                    if (idx !== -1) { const u = [...prev]; u[idx] = savedData; return u; }
+                    return [savedData, ...prev];
+                  });
+                  setView('dashboard');
+                } catch (e) { 
+                  console.error('save finisher API failed', e);
+                  alert('保存失败：' + (e as Error).message);
+                }
               }}
               className="flex-1 px-8 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
             >
@@ -1405,13 +1414,16 @@ const VolunteerEditorView = ({
                   } else {
                     savedData = await api.addVolunteer(volunteerToSave);
                   }
-                } catch (e) { console.error('save volunteer API failed', e); }
-                setVolunteers(prev => {
-                  const idx = prev.findIndex(v => v.id === savedData.id);
-                  if (idx !== -1) { const u = [...prev]; u[idx] = savedData; return u; }
-                  return [...prev, savedData];
-                });
-                setView('volunteer_dashboard');
+                  setVolunteers(prev => {
+                    const idx = prev.findIndex(v => v.id === savedData.id);
+                    if (idx !== -1) { const u = [...prev]; u[idx] = savedData; return u; }
+                    return [savedData, ...prev];
+                  });
+                  setView('volunteer_dashboard');
+                } catch (e) { 
+                  console.error('save volunteer API failed', e);
+                  alert('保存失败：' + (e as Error).message);
+                }
               }}
               className="flex-1 px-8 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
             >
@@ -1454,12 +1466,12 @@ const App: React.FC = () => {
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [badgeTheme, setBadgeTheme] = useState('马拉松胜利者勋章');
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set<string>());
   const [batchProgress, setBatchProgress] = useState<{current: number, total: number} | null>(null);
   const [batchRunnerToRender, setBatchRunnerToRender] = useState<any | null>(null);
 
   useEffect(() => {
-    setSelectedIds(new Set());
+    setSelectedIds(new Set<string>());
   }, [view]);
   
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -1476,10 +1488,18 @@ const App: React.FC = () => {
   const previewCertificateRef = useRef<HTMLDivElement>(null);
   const hiddenCaptureRef = useRef<HTMLDivElement>(null);
 
-  const uniqueRaces = Array.from(new Set([
-    ...finishers.map(f => f.raceName),
-    ...volunteers.map(v => v.raceName)
-  ])).filter(Boolean) as string[];
+  const uniqueRaces: string[] = Array.from(
+    new Map<string, boolean>(
+      [...finishers, ...volunteers]
+        .filter(item => item.raceName)
+        .sort((a, b) => {
+          const timeDiff = getCreatedAtTimestamp(b.createdAt) - getCreatedAtTimestamp(a.createdAt);
+          if (timeDiff !== 0) return timeDiff;
+          return a.raceName.localeCompare(b.raceName, 'zh-CN');
+        })
+        .map(item => [item.raceName, true] as const)
+    ).keys()
+  );
 
   const handleDeleteFinisher = async (id: string) => {
     try { await api.deleteFinisher(id); } catch (e) { console.error('delete finisher failed', e); }
@@ -1494,11 +1514,11 @@ const App: React.FC = () => {
   const handleBatchDeleteFinishers = async () => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
-    const ids = Array.from(selectedIds);
+    const ids: string[] = Array.from(selectedIds);
     try {
       await api.batchDeleteFinishers(ids);
       setFinishers(prev => prev.filter(f => !selectedIds.has(f.id)));
-      setSelectedIds(new Set());
+      setSelectedIds(new Set<string>());
     } catch (e) {
       console.error('batch delete finishers failed', e);
     }
@@ -1507,11 +1527,11 @@ const App: React.FC = () => {
   const handleBatchDeleteVolunteers = async () => {
     if (selectedIds.size === 0) return;
     if (!window.confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？`)) return;
-    const ids = Array.from(selectedIds);
+    const ids: string[] = Array.from(selectedIds);
     try {
       await api.batchDeleteVolunteers(ids);
       setVolunteers(prev => prev.filter(v => !selectedIds.has(v.id)));
-      setSelectedIds(new Set());
+      setSelectedIds(new Set<string>());
     } catch (e) {
       console.error('batch delete volunteers failed', e);
     }
@@ -1582,13 +1602,14 @@ const App: React.FC = () => {
           themeImageUrl: common.themeImageUrl,
           signatureUrl: common.signatureUrl,
           certificateNumber: certNo,
-          styleJson: JSON.stringify(newStyle)
+          styleJson: JSON.stringify(newStyle),
+          createdAt: new Date().toISOString()
         });
       });
 
       try { 
         await api.batchVolunteers(newVolunteers); 
-        setVolunteers(prev => [...prev, ...newVolunteers]);
+        setVolunteers(prev => [...newVolunteers, ...prev]);
         setStyle(newStyle);
         setBatchProgress(null);
         setView('volunteer_dashboard');
@@ -1631,7 +1652,8 @@ const App: React.FC = () => {
           overallRank: row.overallRank || 'N/A',
           inspirationalQuote: quote,
           date: common.date || '2025年01月01日',
-          styleJson: JSON.stringify(newStyle)
+          styleJson: JSON.stringify(newStyle),
+          createdAt: new Date().toISOString()
         });
       });
 
@@ -1640,7 +1662,7 @@ const App: React.FC = () => {
 
     try { 
       await api.batchFinishers(newFinishers); 
-      setFinishers(prev => [...prev, ...newFinishers]);
+      setFinishers(prev => [...newFinishers, ...prev]);
       setStyle(newStyle);
       setBatchProgress(null);
       setView('dashboard');

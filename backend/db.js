@@ -15,18 +15,36 @@ db.exec(`
     name TEXT, bibNumber TEXT, raceName TEXT, category TEXT,
     finishTime TEXT, netTime TEXT, genderRank TEXT, overallRank TEXT,
     date TEXT, inspirationalQuote TEXT, badgeImageUrl TEXT,
-    logoUrl TEXT, themeImageUrl TEXT, runnerImageUrl TEXT, signatureUrl TEXT
+    logoUrl TEXT, themeImageUrl TEXT, runnerImageUrl TEXT, signatureUrl TEXT,
+    createdAt TEXT
   );
   CREATE TABLE IF NOT EXISTS volunteers (
     id TEXT PRIMARY KEY,
     name TEXT, raceName TEXT, role TEXT, serviceHours TEXT,
     date TEXT, certificateNumber TEXT, logoUrl TEXT, signatureUrl TEXT,
-    badgeImageUrl TEXT, themeImageUrl TEXT, runnerImageUrl TEXT
+    badgeImageUrl TEXT, themeImageUrl TEXT, runnerImageUrl TEXT, createdAt TEXT
   );
 `);
 
 try { db.exec('ALTER TABLE finishers ADD COLUMN styleJson TEXT'); } catch(e) {}
 try { db.exec('ALTER TABLE volunteers ADD COLUMN styleJson TEXT'); } catch(e) {}
+try { db.exec('ALTER TABLE finishers ADD COLUMN createdAt TEXT'); } catch(e) {}
+try { db.exec('ALTER TABLE volunteers ADD COLUMN createdAt TEXT'); } catch(e) {}
+
+function backfillCreatedAt(table) {
+  const rows = db.prepare(`SELECT rowid FROM ${table} WHERE createdAt IS NULL ORDER BY rowid ASC`).all();
+  if (rows.length === 0) return;
+  const baseTime = Date.now() - rows.length * 1000;
+  const update = db.prepare(`UPDATE ${table} SET createdAt = ? WHERE rowid = ?`);
+  db.transaction((items) => {
+    items.forEach((row, index) => {
+      update.run(new Date(baseTime + index * 1000).toISOString(), row.rowid);
+    });
+  })(rows);
+}
+
+backfillCreatedAt('finishers');
+backfillCreatedAt('volunteers');
 
 // Seed admin
 const admin = db.prepare('SELECT id FROM admins WHERE account = ?').get('13800009999');
